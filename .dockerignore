@@ -1,0 +1,7 @@
+# Keep local builds fast: only the files the Dockerfile copies are needed.
+*
+!requirements-web.txt
+!scripts/predict_onnx.py
+!scripts/web.py
+!web/
+!models/asclepius_bcc.onnx

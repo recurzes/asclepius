@@ -1,0 +1,22 @@
+# Environment and editor
+.venv/
+__pycache__/
+.idea/
+.vs/
+desktop/bin/
+desktop/obj/
+*.csproj.user
+
+# Training data, manuscripts and the original Colab export
+datasets/
+resources/
+PROJECT COMMISSION BCC/
+*.zip
+
+# Training outputs and weights
+runs/
+*.pt
+
+# Keep only the deployed model
+models/*
+!models/asclepius_bcc.onnx

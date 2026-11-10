@@ -1,0 +1,5 @@
+# Everything the hosted web page needs (no torch, no ultralytics).
+# Used by the Dockerfile; local training still uses pyproject.toml.
+onnxruntime==1.31.0
+numpy==2.5.4
+opencv-python-headless==5.0.0.93

@@ -1,0 +1,24 @@
+[project]
+name = "asclepius"
+version = "0.1.0"
+description = "YOLO11 basal cell carcinoma detector: train, evaluate, export to ONNX"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "ultralytics>=8.3",
+    "torch",
+    "torchvision",
+    "onnx",
+    "onnxslim",
+    "onnxruntime",
+    "pyserial>=3.5",
+]
+
+# torch/torchvision come from the PyTorch CUDA index so training runs on the GPU.
+[tool.uv.sources]
+torch = { index = "pytorch-cuda" }
+torchvision = { index = "pytorch-cuda" }
+
+[[tool.uv.index]]
+name = "pytorch-cuda"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true

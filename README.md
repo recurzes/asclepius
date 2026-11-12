@@ -40,6 +40,8 @@ Webcam inference: `uv run scripts/predict_onnx.py --source 0` (press `q` to quit
 
 ## SMS alerts (Arduino + SIM800C)
 
+Full step-by-step guide (parts, power, wiring, troubleshooting): [docs/SIM800C_SETUP.md](docs/SIM800C_SETUP.md).
+
 The model is far too big for an Arduino (10 MB, about 6.5 GFLOPs per frame; an Uno has 32 KB of flash and 2 KB of RAM). So the PC runs the model and the Arduino only sends the text message.
 
 1. Wire the SIM800C: TXD to pin 7, RXD to pin 8, GND to Arduino GND, and V_M (the logic-level pin; VDD on some boards) to Arduino 5V. Power the module from its own 5 V, 2 A supply into VCC_IN, with a 1000 µF capacitor across it and the supply ground joined to the Arduino ground. Never power it from the Arduino's 5V pin. A bare module with no 5V input or VDD pin needs 4.0 V and a logic level shifter instead.

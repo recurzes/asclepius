@@ -133,7 +133,7 @@ No extra libraries are needed. `SoftwareSerial` comes with the IDE.
 1. In the Arduino IDE open **Tools → Serial Monitor**. Set **9600 baud** and **Newline** line ending.
 2. Wait for `READY`.
 3. Type `ALERT 0.99` and press Enter.
-4. You should see the module's replies and then `SENT`. Look for **`+CMGS:`**, which means the SMS went out. `ERROR` means it didn't (see troubleshooting below).
+4. You should see the module's replies and then `SENT`, which the sketch only prints after the module confirms with **`+CMGS:`**. Otherwise it prints `FAILED <reason>` (see troubleshooting below).
 5. **Close the Serial Monitor** afterwards. Only one program can use the COM port, and the app needs it.
 
 Sending again within 10 minutes shows `COOLDOWN`. That is the sketch's limit working, not an error.
@@ -161,7 +161,7 @@ Or open `desktop/desktop.slnx` in Visual Studio and press F5.
 3. **DETECTION** card: **Minimum confidence** (default 0.50) decides what counts as a detection.
    - Any lesion at or above it gets a box **and triggers an SMS alert**.
    - Lower values catch more lesions but text you about ordinary moles more often.
-4. When an alert goes out, the SMS ALERTS card shows **SMS sent at HH:MM:SS**, or **SMS skipped (10 min cooldown)**.
+4. When an alert goes out, the SMS ALERTS card shows **SMS sent at HH:MM:SS**, **SMS skipped (10 min cooldown)**, or **SMS failed at HH:MM:SS: <reason>** in red. A failed SMS doesn't start the cooldown.
 5. **Activity log** (bottom of the sidebar) shows everything the Arduino and SIM800C reply, including `+CMGS:` or `ERROR`.
 
 Alert limits:
@@ -181,7 +181,10 @@ Alert limits:
 | NET LED blinks every 1 s forever | No network: antenna loose, SIM not seated, or no 2G coverage from your carrier. |
 | `Cannot open COMx` in the app | Close the Arduino IDE Serial Monitor. Pick the right port; unplug and replug to see which one appears. |
 | Status never says *Ready to send SMS* | Wrong COM port, or the sketch isn't uploaded. Wait about 5 s after Connect. |
-| `ERROR` after `AT+CMGS` in the log | No credit, SIM PIN lock on, or phone number not in `+63…` international format. |
+| `NO MODULE …` at connect, or `FAILED no reply from SIM800C` | The Arduino hears nothing from the module. Check the NET LED (module on?), TXD→D7 and RXD→D8 (not swapped), the shared GND, and V_M→5V. |
+| `FAILED SIM not ready` | No SIM inserted, SIM not seated, or SIM PIN lock on. |
+| `FAILED not registered on the network` | Wait for the 3 s NET LED blink. If it never comes: antenna, SIM, or no 2G coverage. |
+| `FAILED network rejected the SMS` | No credit, or phone number not in `+63…` international format. |
 | `UNDER-VOLTAGE WARNNING` (sic), or the module restarts mid-send | Loose power joint, or charger too weak. Re-solder and add the 1000 µF capacitor. |
 | Arduino restarts (status drops back, `READY` again) when sending | SIM800C is getting power from the Arduino. Power it from the charger only. |
 | Garbled characters in the log | GND not shared between Arduino and SIM800C, or V_M not connected to Arduino 5V. |

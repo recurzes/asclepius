@@ -19,6 +19,7 @@ public partial class MainWindow : System.Windows.Window
     readonly Detector detector;
     SerialPort? port;
     string serialBuffer = "";
+    bool moduleMissing;  // sketch reported NO MODULE since the last connect
     CancellationTokenSource? cameraStop;
     Task? cameraTask;
     DateTime lastAlert = DateTime.MinValue;
@@ -185,14 +186,14 @@ public partial class MainWindow : System.Windows.Window
         if (port is not { IsOpen: true })
         {
             Write($"{line} (no Arduino connected, no SMS sent)");
-            LastAlert.Text = $"Detection at {DateTime.Now:HH:mm:ss}, not sent (no Arduino).";
+            SetLastAlert($"Detection at {DateTime.Now:HH:mm:ss}, not sent (no Arduino).");
             return;
         }
         try
         {
             port.WriteLine(line);
             Write($"{line} sent to Arduino");
-            LastAlert.Text = $"Alert sent to Arduino at {DateTime.Now:HH:mm:ss}.";
+            SetLastAlert($"Alert sent to Arduino at {DateTime.Now:HH:mm:ss}.");
         }
         catch (Exception ex) { Write($"Arduino write failed: {ex.Message}"); }
     }
@@ -224,6 +225,7 @@ public partial class MainWindow : System.Windows.Window
         {
             port = new SerialPort(name, 9600) { NewLine = "\n" };
             serialBuffer = "";
+            moduleMissing = false;
             port.DataReceived += (s, _) =>
             {
                 string text = ((SerialPort)s).ReadExisting();
@@ -254,13 +256,34 @@ public partial class MainWindow : System.Windows.Window
             serialBuffer = serialBuffer[(newline + 1)..];
             if (line.Length == 0) continue;
             Write("Arduino: " + line);
-            switch (line)  // replies from firmware/asclepius_sms
+            // replies from firmware/asclepius_sms
+            if (line == "READY")
             {
-                case "READY": SetArduino("ClearFg", "Ready to send SMS"); break;
-                case "SENT": LastAlert.Text = $"SMS sent at {DateTime.Now:HH:mm:ss}."; break;
-                case "COOLDOWN": LastAlert.Text = $"SMS skipped at {DateTime.Now:HH:mm:ss} (10 min cooldown)."; break;
+                if (!moduleMissing) SetArduino("ClearFg", "Ready to send SMS");
             }
+            else if (line.StartsWith("NO MODULE"))
+            {
+                moduleMissing = true;
+                SetArduino("AlertFg", "Arduino OK, SIM800C not answering");
+            }
+            else if (line == "SENT")
+            {
+                moduleMissing = false;
+                SetArduino("ClearFg", "Ready to send SMS");
+                SetLastAlert($"SMS sent at {DateTime.Now:HH:mm:ss}.");
+            }
+            else if (line.StartsWith("FAILED"))
+                SetLastAlert($"SMS failed at {DateTime.Now:HH:mm:ss}: {line[6..].Trim()}", failed: true);
+            else if (line == "COOLDOWN")
+                SetLastAlert($"SMS skipped at {DateTime.Now:HH:mm:ss} (10 min cooldown).");
         }
+    }
+
+    void SetLastAlert(string text, bool failed = false)
+    {
+        LastAlert.Text = text;
+        if (failed) LastAlert.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "AlertFg");
+        else LastAlert.ClearValue(System.Windows.Controls.TextBlock.ForegroundProperty);  // back to the Hint style
     }
 
     void SetArduino(string brush, string text)

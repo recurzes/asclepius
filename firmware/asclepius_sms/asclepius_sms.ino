@@ -65,7 +65,13 @@ const char *sendSms(const String &text) {
   // Check the SIM first: without one the module rejects every SMS command,
   // which would otherwise be reported as a confusing text-mode error.
   r = command("AT+CPIN?", 2000);
-  if (r.indexOf("+CPIN: READY") < 0) return "SIM not ready (not inserted, or PIN lock on)";
+  if (r.indexOf("+CPIN: READY") < 0) {
+    if (r.indexOf("SIM PIN") >= 0) return "SIM has PIN lock on (turn it off in a phone)";
+    if (r.indexOf("SIM PUK") >= 0) return "SIM is PUK-locked (too many wrong PINs; unlock it in a phone)";
+    if (r.indexOf("ERROR: 10") >= 0 || r.indexOf("ERROR: 13") >= 0)
+      return "SIM not detected (check orientation and seating, then power-cycle the module)";
+    return "SIM not ready yet (wait a few seconds after power-up and retry)";
+  }
 
   // Right after power-up the SMS service needs a few seconds after the SIM is ready.
   if (command("AT+CMGF=1", 1000).indexOf("\nOK") < 0)

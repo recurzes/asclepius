@@ -30,16 +30,22 @@ bool sentBefore = false;
 // chars); an empty string means the module said nothing at all.
 String collect(unsigned long ms, const char *until = nullptr) {
   String reply;
-  unsigned long start = millis();
+  unsigned long start = millis(), lastByte = millis();
+  bool done = false;
   while (millis() - start < ms) {
     while (sim.available()) {
       char c = sim.read();
       Serial.write(c);
       reply += c;
       if (reply.length() > 150) reply.remove(0, reply.length() - 150);
+      lastByte = millis();
     }
-    if (reply.indexOf("\nOK") >= 0 || reply.indexOf("ERROR") >= 0) break;
-    if (until && reply.indexOf(until) >= 0) break;
+    if (reply.indexOf("\nOK") >= 0 || reply.indexOf("ERROR") >= 0) done = true;
+    if (until && reply.indexOf(until) >= 0) done = true;
+    // After a match, keep reading until the line ends. SoftwareSerial can't receive
+    // while it transmits, so sending the next command over the reply's trailing
+    // "\r\n" garbles those bytes (they showed up as "?" in the log).
+    if (done && millis() - lastByte > 20) break;
   }
   return reply;
 }
@@ -55,10 +61,15 @@ const char *sendSms(const String &text) {
 
   String r = command("AT", 1000);
   if (r.length() == 0) return "no reply from SIM800C";
-  if (command("AT+CMGF=1", 1000).indexOf("\nOK") < 0) return "module refused text mode";
 
+  // Check the SIM first: without one the module rejects every SMS command,
+  // which would otherwise be reported as a confusing text-mode error.
   r = command("AT+CPIN?", 2000);
   if (r.indexOf("+CPIN: READY") < 0) return "SIM not ready (not inserted, or PIN lock on)";
+
+  // Right after power-up the SMS service needs a few seconds after the SIM is ready.
+  if (command("AT+CMGF=1", 1000).indexOf("\nOK") < 0)
+    return "SMS service not ready yet (wait ~10 s after power-up and retry)";
 
   r = command("AT+CREG?", 2000);  // ",1" = home network, ",5" = roaming
   if (r.indexOf(",1") < 0 && r.indexOf(",5") < 0)

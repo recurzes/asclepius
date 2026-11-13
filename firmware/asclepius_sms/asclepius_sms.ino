@@ -55,20 +55,21 @@ String command(const char *cmd, unsigned long ms) {
   return collect(ms);
 }
 
-// "SIM not ready, module said: <its reply>", so an unexpected answer shows up on the
-// app's SMS card instead of a guess. Unreadable bytes are printed as '?'.
-const char *simReplyError(const String &reply) {
-  static char msg[96];
-  int at = reply.indexOf("+CPIN");
+// The line of `reply` starting at `key` (or at "ERROR"), for quoting the module's
+// own answer in a FAILED message instead of guessing. Unreadable bytes become '?'.
+String said(const String &reply, const char *key) {
+  int at = reply.indexOf(key);
   if (at < 0) at = reply.indexOf("ERROR");
-  String said = at < 0 ? String("nothing useful") : reply.substring(at);
-  int end = said.indexOf('\r');
-  if (end >= 0) said.remove(end);
-  for (unsigned int i = 0; i < said.length(); i++)
-    if (said[i] < 32 || said[i] > 126) said[i] = '?';
-  snprintf(msg, sizeof msg, "SIM not ready after 10 s, module said: %s", said.c_str());
-  return msg;
+  if (at < 0) return "nothing";
+  String line = reply.substring(at);
+  int end = line.indexOf('\r');
+  if (end >= 0) line.remove(end);
+  for (unsigned int i = 0; i < line.length(); i++)
+    if (line[i] < 32 || line[i] > 126) line[i] = '?';
+  return line;
 }
+
+char failure[128];  // FAILED messages that quote the module
 
 // Returns nullptr when the module confirmed the SMS, otherwise why it failed.
 const char *sendSms(const String &text) {
@@ -90,15 +91,31 @@ const char *sendSms(const String &text) {
     if (r.indexOf("NOT INSERTED") >= 0 || r.indexOf("ERROR: 10") >= 0 || r.indexOf("ERROR: 13") >= 0)
       return "SIM not detected (check orientation and seating, then power-cycle the module)";
   }
-  if (r.indexOf("+CPIN: READY") < 0) return simReplyError(r);
+  if (r.indexOf("+CPIN: READY") < 0) {
+    snprintf(failure, sizeof failure, "SIM not ready after 10 s, module said: %s", said(r, "+CPIN").c_str());
+    return failure;
+  }
 
   // Right after power-up the SMS service needs a few seconds after the SIM is ready.
   if (command("AT+CMGF=1", 1000).indexOf("\nOK") < 0)
     return "SMS service not ready yet (wait ~10 s after power-up and retry)";
 
-  r = command("AT+CREG?", 2000);  // ",1" = home network, ",5" = roaming
-  if (r.indexOf(",1") < 0 && r.indexOf(",5") < 0)
-    return "not registered on the network (wait for the 3 s NET LED blink; 2G coverage?)";
+  // "+CREG: 0,1" = home network, "0,5" = roaming, "0,2" = still searching (normal for
+  // up to a minute after power-up), "0,3" = network refused the SIM.
+  bool registered = false;
+  for (int attempt = 0; attempt < 20 && !registered; attempt++) {
+    if (attempt > 0) collect(3000);
+    r = command("AT+CREG?", 2000);
+    registered = r.indexOf(",1") >= 0 || r.indexOf(",5") >= 0;
+    if (r.indexOf(",3") >= 0) return "network refused the SIM (CREG 0,3): is the SIM active and registered?";
+  }
+  if (!registered) {
+    String creg = said(r, "+CREG");
+    String csq = said(command("AT+CSQ", 2000), "+CSQ");  // 99,99 = no signal at all
+    snprintf(failure, sizeof failure, "not registered after 60 s (%s, signal %s): antenna, power, or no 2G here",
+             creg.c_str(), csq.c_str());
+    return failure;
+  }
 
   sim.print("AT+CMGS=\"");
   sim.print(PHONE);

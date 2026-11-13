@@ -186,7 +186,8 @@ Alert limits:
 | `FAILED SIM not detected` (log shows `+CME ERROR: 10`) | SIM upside down, loose in its adapter, or inserted while powered. Reseat it with the power off. |
 | `FAILED SIM not detected` (log shows `+CPIN: NOT INSERTED`) | Same as above: the module can't see the SIM. |
 | `FAILED SIM not ready after 10 s, module said: …` | The module's own answer is quoted. `+CPIN: NOT READY` that never clears usually means a bad SIM contact or a power dip; reseat the SIM and check the charger wiring. Garbled text means the serial signal is unreliable: check the shared GND and V_M. |
-| `FAILED not registered on the network` | Wait for the 3 s NET LED blink. If it never comes: antenna, SIM, or no 2G coverage. |
+| `FAILED not registered after 60 s (+CREG: 0,2, signal +CSQ: …)` | The module searched for a minute and found no usable network. `+CSQ: 99,99` means no 2G signal at all: check the antenna, try near a window, add the 1000 µF capacitor. Run `AT+COPS=?` (takes up to 3 min) to list the 2G networks in range; an empty list means no 2G here. |
+| `FAILED network refused the SIM (CREG 0,3)` | The SIM is inactive, has no government SIM registration, or the carrier blocks it. Test it in a phone. |
 | `FAILED network rejected the SMS` | No credit, or phone number not in `+63…` international format. |
 | `UNDER-VOLTAGE WARNNING` (sic), or the module restarts mid-send | Loose power joint, or charger too weak. Re-solder and add the 1000 µF capacitor. |
 | Arduino restarts (status drops back, `READY` again) when sending | SIM800C is getting power from the Arduino. Power it from the charger only. |

@@ -55,6 +55,21 @@ String command(const char *cmd, unsigned long ms) {
   return collect(ms);
 }
 
+// "SIM not ready, module said: <its reply>", so an unexpected answer shows up on the
+// app's SMS card instead of a guess. Unreadable bytes are printed as '?'.
+const char *simReplyError(const String &reply) {
+  static char msg[96];
+  int at = reply.indexOf("+CPIN");
+  if (at < 0) at = reply.indexOf("ERROR");
+  String said = at < 0 ? String("nothing useful") : reply.substring(at);
+  int end = said.indexOf('\r');
+  if (end >= 0) said.remove(end);
+  for (unsigned int i = 0; i < said.length(); i++)
+    if (said[i] < 32 || said[i] > 126) said[i] = '?';
+  snprintf(msg, sizeof msg, "SIM not ready after 10 s, module said: %s", said.c_str());
+  return msg;
+}
+
 // Returns nullptr when the module confirmed the SMS, otherwise why it failed.
 const char *sendSms(const String &text) {
   collect(50);  // flush anything left over from earlier
@@ -64,14 +79,18 @@ const char *sendSms(const String &text) {
 
   // Check the SIM first: without one the module rejects every SMS command,
   // which would otherwise be reported as a confusing text-mode error.
-  r = command("AT+CPIN?", 2000);
-  if (r.indexOf("+CPIN: READY") < 0) {
+  // Right after power-up the module answers "+CPIN: NOT READY" (or a bare ERROR)
+  // for a while, so give it up to ~10 s before giving up.
+  for (int attempt = 0; attempt < 5; attempt++) {
+    if (attempt > 0) collect(2000);  // wait, still forwarding anything it says
+    r = command("AT+CPIN?", 2000);
+    if (r.indexOf("+CPIN: READY") >= 0) break;
     if (r.indexOf("SIM PIN") >= 0) return "SIM has PIN lock on (turn it off in a phone)";
     if (r.indexOf("SIM PUK") >= 0) return "SIM is PUK-locked (too many wrong PINs; unlock it in a phone)";
-    if (r.indexOf("ERROR: 10") >= 0 || r.indexOf("ERROR: 13") >= 0)
+    if (r.indexOf("NOT INSERTED") >= 0 || r.indexOf("ERROR: 10") >= 0 || r.indexOf("ERROR: 13") >= 0)
       return "SIM not detected (check orientation and seating, then power-cycle the module)";
-    return "SIM not ready yet (wait a few seconds after power-up and retry)";
   }
+  if (r.indexOf("+CPIN: READY") < 0) return simReplyError(r);
 
   // Right after power-up the SMS service needs a few seconds after the SIM is ready.
   if (command("AT+CMGF=1", 1000).indexOf("\nOK") < 0)

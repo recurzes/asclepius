@@ -184,7 +184,8 @@ Alert limits:
 | `NO MODULE …` at connect, or `FAILED no reply from SIM800C` | The Arduino hears nothing from the module. Check the NET LED (module on?), TXD→D7 and RXD→D8 (not swapped), the shared GND, and V_M→5V. |
 | `FAILED SIM has PIN lock on` (log shows `+CPIN: SIM PIN`) | Put the SIM in a phone and turn off the SIM PIN lock, then put it back and power-cycle the module. |
 | `FAILED SIM not detected` (log shows `+CME ERROR: 10`) | SIM upside down, loose in its adapter, or inserted while powered. Reseat it with the power off. |
-| `FAILED SIM not ready yet` | The module just powered up. Wait about 10 s and send again. |
+| `FAILED SIM not detected` (log shows `+CPIN: NOT INSERTED`) | Same as above: the module can't see the SIM. |
+| `FAILED SIM not ready after 10 s, module said: …` | The module's own answer is quoted. `+CPIN: NOT READY` that never clears usually means a bad SIM contact or a power dip; reseat the SIM and check the charger wiring. Garbled text means the serial signal is unreliable: check the shared GND and V_M. |
 | `FAILED not registered on the network` | Wait for the 3 s NET LED blink. If it never comes: antenna, SIM, or no 2G coverage. |
 | `FAILED network rejected the SMS` | No credit, or phone number not in `+63…` international format. |
 | `UNDER-VOLTAGE WARNNING` (sic), or the module restarts mid-send | Loose power joint, or charger too weak. Re-solder and add the 1000 µF capacitor. |

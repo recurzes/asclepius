@@ -105,7 +105,7 @@ Double-check VCC_IN and GND before powering. Reversing them can destroy the modu
    ```cpp
    const char PHONE[] = "+639XXXXXXXXX";               // CHANGE ME
    ```
-   Optional: `COOLDOWN_MS` sets the minimum time between SMS (default 10 minutes).
+   Optional: `COOLDOWN_MS` sets the minimum time between SMS (default 1 minute).
 4. Plug the Arduino into the PC. In the IDE, choose **Tools → Board → Arduino Uno** (or Nano) and **Tools → Port → COMx**.
 5. Click **Upload**.
 
@@ -136,7 +136,7 @@ No extra libraries are needed. `SoftwareSerial` comes with the IDE.
 4. You should see the module's replies and then `SENT`, which the sketch only prints after the module confirms with **`+CMGS:`**. Otherwise it prints `FAILED <reason>` (see troubleshooting below).
 5. **Close the Serial Monitor** afterwards. Only one program can use the COM port, and the app needs it.
 
-Sending again within 10 minutes shows `COOLDOWN`. That is the sketch's limit working, not an error.
+Sending again within 1 minute shows `COOLDOWN`. That is the sketch's limit working, not an error.
 
 ---
 
@@ -161,13 +161,13 @@ Or open `desktop/desktop.slnx` in Visual Studio and press F5.
 3. **DETECTION** card: **Minimum confidence** (default 0.50) decides what counts as a detection.
    - Any lesion at or above it gets a box **and triggers an SMS alert**.
    - Lower values catch more lesions but text you about ordinary moles more often.
-4. When an alert goes out, the SMS ALERTS card shows **SMS sent at HH:MM:SS**, **SMS skipped (10 min cooldown)**, or **SMS failed at HH:MM:SS: <reason>** in red. A failed SMS doesn't start the cooldown.
+4. When an alert goes out, the SMS ALERTS card shows **SMS sent at HH:MM:SS**, **SMS skipped (1 min cooldown)**, or **SMS failed at HH:MM:SS: <reason>** in red. A failed SMS doesn't start the cooldown.
 5. **Activity log** (bottom of the sidebar) shows everything the Arduino and SIM800C reply, including `+CMGS:` or `ERROR`.
 
 Alert limits:
 - **Camera mode:** the app sends at most one alert line every 5 seconds.
-- **Sketch:** the Arduino sends at most one SMS every 10 minutes, whatever the app sends.
-- **Opened images:** each image you open sends an alert right away (still subject to the 10-minute SMS limit).
+- **Sketch:** the Arduino sends at most one SMS per minute, whatever the app sends.
+- **Opened images:** each image you open sends an alert right away (still subject to the 1-minute SMS limit).
 
 **Quick end-to-end test:** connect, then open `datasets/bcc/test/images/ISIC_0024331.jpg`. It scores 0.70, above the default 0.50, so it should trigger an SMS.
 
@@ -192,7 +192,7 @@ Alert limits:
 | `UNDER-VOLTAGE WARNNING` (sic), or the module restarts mid-send | Loose power joint, or charger too weak. Re-solder and add the 1000 µF capacitor. |
 | Arduino restarts (status drops back, `READY` again) when sending | SIM800C is getting power from the Arduino. Power it from the charger only. |
 | Garbled characters in the log | GND not shared between Arduino and SIM800C, or V_M not connected to Arduino 5V. |
-| `SMS skipped (10 min cooldown)` | Working as designed. Lower `COOLDOWN_MS` in the sketch if you need more frequent texts. |
+| `SMS skipped (1 min cooldown)` | Working as designed. Lower `COOLDOWN_MS` in the sketch if you need more frequent texts. |
 | Alerts for ordinary moles | The model finds lesions in general, not BCC specifically. Raise **Minimum confidence**. |
 
 ---

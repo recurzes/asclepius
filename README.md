@@ -62,7 +62,7 @@ dotnet run --project desktop        # needs the .NET 10 SDK
 
 Pick the Arduino's COM port and click **Connect**, wait for `Arduino: READY` in the log, then click **Start camera** or **Open image...**. Any box at or above **Min confidence** (0.50 by default) is drawn and triggers an alert. In camera mode the app sends at most one alert every 5 seconds. Everything the Arduino and SIM800C reply is shown in the log at the bottom.
 
-From the command line, when a detection reaches `--alert` (0.80 by default), the PC sends `ALERT 0.93` to the Arduino. The Arduino texts the number, at most once every 10 minutes (`COOLDOWN_MS`). The terminal prints what the SIM800C replied: `+CMGS:` means the message was sent, `ERROR` means it was not.
+From the command line, when a detection reaches `--alert` (0.80 by default), the PC sends `ALERT 0.93` to the Arduino. The Arduino texts the number, at most once per minute (`COOLDOWN_MS`). The terminal prints what the SIM800C replied: `+CMGS:` means the message was sent, `ERROR` means it was not.
 
 Web page: `uv run scripts/web.py` (or `make web`) opens http://127.0.0.1:8000. Drag in an image to see the boxes and confidence levels. It runs only on this computer; press Ctrl+C in the terminal to stop it.
 

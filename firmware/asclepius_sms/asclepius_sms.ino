@@ -17,7 +17,7 @@
 #include <SoftwareSerial.h>
 
 const char PHONE[] = "+639XXXXXXXXX";               // CHANGE ME: number that gets the SMS
-const unsigned long COOLDOWN_MS = 10UL * 60 * 1000;  // at most one SMS per 10 minutes
+const unsigned long COOLDOWN_MS = 60UL * 1000;       // at most one SMS per minute
 
 const char HINT_WIRING[] = "check SIM800C power (NET LED), TXD->D7, RXD->D8, shared GND, V_M->5V";
 

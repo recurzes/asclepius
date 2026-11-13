@@ -12,7 +12,7 @@ namespace desktop;
 
 public partial class MainWindow : System.Windows.Window
 {
-    static readonly TimeSpan CameraAlertGap = TimeSpan.FromSeconds(5);  // don't flood the Arduino; the sketch enforces the 10 min SMS cooldown
+    static readonly TimeSpan CameraAlertGap = TimeSpan.FromSeconds(5);  // don't flood the Arduino; the sketch enforces the 1 min SMS cooldown
     static readonly Scalar BoxColor = new(56, 68, 240);  // BGR of #F04438
     static readonly string[] ImageExtensions = [".jpg", ".jpeg", ".png", ".bmp"];
 
@@ -275,7 +275,7 @@ public partial class MainWindow : System.Windows.Window
             else if (line.StartsWith("FAILED"))
                 SetLastAlert($"SMS failed at {DateTime.Now:HH:mm:ss}: {line[6..].Trim()}", failed: true);
             else if (line == "COOLDOWN")
-                SetLastAlert($"SMS skipped at {DateTime.Now:HH:mm:ss} (10 min cooldown).");
+                SetLastAlert($"SMS skipped at {DateTime.Now:HH:mm:ss} (1 min cooldown).");
         }
     }
 
